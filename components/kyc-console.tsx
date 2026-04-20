@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
+import { useShallow } from "zustand/react/shallow";
 
 import { ChatPanel } from "@/components/chat-panel";
 import { RecordWorkspace } from "@/components/record-workspace";
@@ -27,7 +28,7 @@ export function KycConsole() {
     setProcessingStarted,
     uploadAddress,
     uploadIdentity,
-  } = useKycStore((state) => ({
+  } = useKycStore(useShallow((state) => ({
     addMessage: state.addMessage,
     addressUploaded: state.addressUploaded,
     identityUploaded: state.identityUploaded,
@@ -38,7 +39,7 @@ export function KycConsole() {
     setProcessingStarted: state.setProcessingStarted,
     uploadAddress: state.uploadAddress,
     uploadIdentity: state.uploadIdentity,
-  }));
+  })));
 
   const requestAssistantReply = useCallback(
     async (processingResult?: KycProcessingResult | null, manageLoading = true) => {

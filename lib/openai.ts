@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 
-const model = process.env.OPENAI_MODEL || "gpt-5.4-mini";
+const chatModel = process.env.OPENAI_MODEL || "gpt-4o-mini";
+const visionModel = process.env.OPENAI_VISION_MODEL || "gpt-4o";
 const apiKey = process.env.OPENAI_KEY || process.env.OPENAI_API_KEY;
 
 let client: OpenAI | null = null;
@@ -20,5 +21,9 @@ export function getOpenAIClient() {
 }
 
 export function getOpenAIModel() {
-  return model;
+  return chatModel;
+}
+
+export function getOpenAIVisionModel() {
+  return visionModel;
 }

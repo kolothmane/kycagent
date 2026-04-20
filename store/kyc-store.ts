@@ -1,5 +1,3 @@
-"use client";
-
 import { create } from "zustand";
 
 import type {
@@ -50,6 +48,8 @@ interface KycStoreState {
   confirmReceived: boolean;
   identityFileName: string | null;
   addressFileName: string | null;
+  identityFileData: string | null;
+  addressFileData: string | null;
   kycStatus: KycStatus;
   complianceScore: number;
   extractedData: KycProcessingResult["extracted"] | null;
@@ -65,8 +65,18 @@ interface KycStoreState {
   addMessage: (role: ConversationMessage["role"], content: string) => void;
   setChatLoading: (value: boolean) => void;
   setActiveTab: (tab: RecordTab) => void;
-  uploadIdentity: (fileName: string) => void;
-  uploadAddress: (fileName: string) => void;
+  /**
+   * Accepts a `data:image/...;base64,...` data URL produced by FileReader.readAsDataURL.
+   * @param fileName - The original file name.
+   * @param fileData - The base64-encoded data URL of the identity document image.
+   */
+  uploadIdentity: (fileName: string, fileData: string) => void;
+  /**
+   * Accepts a `data:image/...;base64,...` data URL produced by FileReader.readAsDataURL.
+   * @param fileName - The original file name.
+   * @param fileData - The base64-encoded data URL of the proof of address image.
+   */
+  uploadAddress: (fileName: string, fileData: string) => void;
   setProcessingStarted: () => void;
   setProcessingResult: (result: KycProcessingResult) => void;
   rollbackProcessing: (message: string) => void;
@@ -78,6 +88,8 @@ export const useKycStore = create<KycStoreState>((set) => ({
   confirmReceived: false,
   identityFileName: null,
   addressFileName: null,
+  identityFileData: null,
+  addressFileData: null,
   kycStatus: "PENDING",
   complianceScore: 18,
   extractedData: null,
@@ -96,10 +108,11 @@ export const useKycStore = create<KycStoreState>((set) => ({
     })),
   setChatLoading: (value) => set({ isChatLoading: value }),
   setActiveTab: (tab) => set({ activeTab: tab }),
-  uploadIdentity: (fileName) =>
+  uploadIdentity: (fileName, fileData) =>
     set((state) => ({
       identityUploaded: true,
       identityFileName: fileName,
+      identityFileData: fileData,
       timeline: [
         ...state.timeline,
         buildTimelineEntry(
@@ -117,10 +130,11 @@ export const useKycStore = create<KycStoreState>((set) => ({
         },
       ],
     })),
-  uploadAddress: (fileName) =>
+  uploadAddress: (fileName, fileData) =>
     set((state) => ({
       addressUploaded: true,
       addressFileName: fileName,
+      addressFileData: fileData,
       timeline: [
         ...state.timeline,
         buildTimelineEntry(

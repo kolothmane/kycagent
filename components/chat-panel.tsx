@@ -187,7 +187,7 @@ export function ChatPanel({
             </div>
 
             <div className="text-xs text-muted-foreground">
-              Follow the document sequence in the workspace, then type EXACTLY{" "}
+              Follow the document sequence in the workspace, then type{" "}
               <span className="font-semibold text-foreground">CONFIRM</span> to start verification.
             </div>
           </form>

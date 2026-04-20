@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const response = await client.responses.create({
+    const requestBody: Parameters<typeof client.responses.create>[0] = {
       model: getOpenAIModel(),
       input: [
         {
@@ -84,9 +84,13 @@ export async function POST(request: NextRequest) {
           schema: assistantResponseSchema,
         },
       },
-    } as any);
+    };
 
-    const outputText = response.output_text?.trim();
+    const response = await client.responses.create(requestBody);
+    const outputText =
+      "output_text" in response && typeof response.output_text === "string"
+        ? response.output_text.trim()
+        : "";
 
     if (!outputText) {
       return NextResponse.json({ message: fallbackMessage });

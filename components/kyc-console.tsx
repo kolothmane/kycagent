@@ -124,7 +124,7 @@ export function KycConsole() {
     addMessage("user", message);
 
     const state = useKycStore.getState();
-    const shouldProcess = message === "CONFIRM" && state.identityUploaded && state.addressUploaded;
+    const shouldProcess = message.toUpperCase() === "CONFIRM" && state.identityUploaded && state.addressUploaded;
 
     if (!shouldProcess) {
       await requestAssistantReply();

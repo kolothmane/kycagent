@@ -12,6 +12,14 @@ import { useKycStore } from "@/store/kyc-store";
 
 const ACCEPTED_TYPES = new Set(["image/png", "image/jpeg"]);
 
+const readFileAsDataUrl = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
 export function KycConsole() {
   const identityInputRef = useRef<HTMLInputElement | null>(null);
   const addressInputRef = useRef<HTMLInputElement | null>(null);
@@ -104,10 +112,12 @@ export function KycConsole() {
       return;
     }
 
+    const fileData = await readFileAsDataUrl(file);
+
     if (type === "identity") {
-      uploadIdentity(file.name);
+      uploadIdentity(file.name, fileData);
     } else {
-      uploadAddress(file.name);
+      uploadAddress(file.name, fileData);
     }
 
     setActiveTab("uploaded-documents");
@@ -145,6 +155,8 @@ export function KycConsole() {
         body: JSON.stringify({
           identityFileName: latestState.identityFileName,
           addressFileName: latestState.addressFileName,
+          identityFileData: latestState.identityFileData,
+          addressFileData: latestState.addressFileData,
         }),
       });
 
@@ -162,7 +174,7 @@ export function KycConsole() {
       );
       addMessage(
         "assistant",
-        "Verification could not be completed at this time. Please type EXACTLY \"CONFIRM\" again to resubmit the current case package.",
+        "Verification could not be completed at this time. Please type \"CONFIRM\" again to resubmit the current case package.",
       );
     } finally {
       setChatLoading(false);

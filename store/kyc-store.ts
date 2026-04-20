@@ -85,21 +85,9 @@ export const useKycStore = create<KycStoreState>((set) => ({
   processingSummary: "Awaiting identity document submission to begin customer verification.",
   referenceId: null,
   nextSteps: ["Collect required onboarding documentation to initiate verification."],
-  activityLog: [
-    {
-      label: "Workspace initialized",
-      detail: "KYC Service Agent workspace opened and ready for document intake.",
-      timestamp: new Date().toISOString(),
-    },
-  ],
+  activityLog: [],
   messages: [],
-  timeline: [
-    buildTimelineEntry(
-      "Workspace ready",
-      "Customer verification workspace initialized and awaiting intake.",
-      "neutral",
-    ),
-  ],
+  timeline: [],
   activeTab: "overview",
   isChatLoading: false,
   addMessage: (role, content) =>

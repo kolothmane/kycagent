@@ -65,9 +65,17 @@ interface KycStoreState {
   addMessage: (role: ConversationMessage["role"], content: string) => void;
   setChatLoading: (value: boolean) => void;
   setActiveTab: (tab: RecordTab) => void;
-  /** Accepts a `data:image/...;base64,...` data URL produced by FileReader.readAsDataURL. */
+  /**
+   * Accepts a `data:image/...;base64,...` data URL produced by FileReader.readAsDataURL.
+   * @param fileName - The original file name.
+   * @param fileData - The base64-encoded data URL of the identity document image.
+   */
   uploadIdentity: (fileName: string, fileData: string) => void;
-  /** Accepts a `data:image/...;base64,...` data URL produced by FileReader.readAsDataURL. */
+  /**
+   * Accepts a `data:image/...;base64,...` data URL produced by FileReader.readAsDataURL.
+   * @param fileName - The original file name.
+   * @param fileData - The base64-encoded data URL of the proof of address image.
+   */
   uploadAddress: (fileName: string, fileData: string) => void;
   setProcessingStarted: () => void;
   setProcessingResult: (result: KycProcessingResult) => void;

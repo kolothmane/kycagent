@@ -11,6 +11,7 @@ import {
   Shield,
   UserRound,
 } from "lucide-react";
+import { useShallow } from "zustand/react/shallow";
 
 import { StatusBadge } from "@/components/status-badge";
 import { UploadZone } from "@/components/upload-zone";
@@ -98,7 +99,7 @@ export function RecordWorkspace({
     salesforceRecordId,
     setActiveTab,
     timeline,
-  } = useKycStore((state) => ({
+  } = useKycStore(useShallow((state) => ({
     activeTab: state.activeTab,
     activityLog: state.activityLog,
     addressFileName: state.addressFileName,
@@ -115,7 +116,7 @@ export function RecordWorkspace({
     salesforceRecordId: state.salesforceRecordId,
     setActiveTab: state.setActiveTab,
     timeline: state.timeline,
-  }));
+  })));
 
   const applicantName = extractedData
     ? `${extractedData.firstName} ${extractedData.lastName}`

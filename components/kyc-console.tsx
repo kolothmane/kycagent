@@ -155,7 +155,7 @@ export function KycConsole() {
       setProcessingResult(result);
       setActiveTab("verification-results");
       await requestAssistantReply(result, false);
-    } catch (error) {
+    } catch {
       rollbackProcessing(
         "Verification processing did not complete. The case remains available for resubmission.",
       );

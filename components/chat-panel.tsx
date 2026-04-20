@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Bot, Paperclip, SendHorizontal } from "lucide-react";
+import { useShallow } from "zustand/react/shallow";
 
 import { StatusBadge } from "@/components/status-badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -35,14 +36,14 @@ export function ChatPanel({
     isChatLoading,
     kycStatus,
     messages,
-  } = useKycStore((state) => ({
+  } = useKycStore(useShallow((state) => ({
     confirmReceived: state.confirmReceived,
     identityUploaded: state.identityUploaded,
     addressUploaded: state.addressUploaded,
     isChatLoading: state.isChatLoading,
     kycStatus: state.kycStatus,
     messages: state.messages,
-  }));
+  })));
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });

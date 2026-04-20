@@ -28,6 +28,7 @@ export function ChatPanel({
 }: ChatPanelProps) {
   const [draft, setDraft] = useState("");
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const isSubmittingRef = useRef(false);
 
   const {
     confirmReceived,
@@ -145,13 +146,19 @@ export function ChatPanel({
             onSubmit={async (event) => {
               event.preventDefault();
 
-              if (!draft.trim() || isChatLoading) {
+              if (!draft.trim() || isChatLoading || isSubmittingRef.current) {
                 return;
               }
 
+              isSubmittingRef.current = true;
               const currentDraft = draft;
               setDraft("");
-              await onSendMessage(currentDraft);
+
+              try {
+                await onSendMessage(currentDraft);
+              } finally {
+                isSubmittingRef.current = false;
+              }
             }}
           >
             <div className="flex items-center gap-2">

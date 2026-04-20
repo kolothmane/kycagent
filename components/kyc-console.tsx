@@ -160,6 +160,18 @@ export function KycConsole() {
         }),
       });
 
+      if (response.status === 422 || response.status === 400) {
+        const errorPayload = (await response.json()) as { error?: string };
+        const reason =
+          errorPayload.error && errorPayload.error.trim()
+            ? errorPayload.error
+            : "One or more documents could not be validated. Please ensure you have uploaded a valid identity document and a valid proof of address, then try again.";
+
+        rollbackProcessing(reason);
+        addMessage("assistant", reason);
+        return;
+      }
+
       if (!response.ok) {
         throw new Error("Unable to process the verification package.");
       }

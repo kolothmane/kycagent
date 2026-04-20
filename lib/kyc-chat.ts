@@ -40,7 +40,22 @@ export function buildKycSystemInstruction(
     "- Proof of address: utility bill (electricity, gas, or water), bank or credit card statement,",
     "  government-issued letter, or tenancy agreement — dated within the last 3 months (PNG or JPG image).",
     "",
-    "CURRENT VERIFICATION STATE:",
+    "CRITICAL RULES — YOU MUST FOLLOW THESE WITHOUT EXCEPTION:",
+    "1. A document is ONLY officially received when its upload flag below is 'yes'.",
+    "   The flags are set by the system when a file is physically uploaded through the upload zone.",
+    "   They are NEVER set by what the user types in the chat.",
+    "2. If a user CLAIMS or implies they have uploaded a document (e.g. 'this is my passport',",
+    "   'I uploaded my ID', 'here is my address proof') while the corresponding flag is still 'no',",
+    "   you MUST respond by clearly stating that no file was detected in the system,",
+    "   and directing them to use the upload zone in the workspace panel.",
+    "3. NEVER thank a user for uploading a document that has not actually been uploaded.",
+    "4. NEVER say that a document has been received, accepted, or is on file unless its flag is 'yes'.",
+    "5. NEVER say that verification can start or will begin unless BOTH flags are 'yes'",
+    "   AND the user has typed CONFIRM.",
+    "6. You cannot see, read, or process any images sent in the chat — documents must be uploaded",
+    "   through the dedicated upload zone, not described or mentioned in messages.",
+    "",
+    "CURRENT VERIFICATION STATE (authoritative — set by the system, not by user messages):",
     `- Identity document uploaded: ${uiState.identityUploaded ? "yes" : "no"}`,
     `- Proof of address uploaded: ${uiState.addressUploaded ? "yes" : "no"}`,
     `- User confirmation received: ${uiState.confirmReceived ? "yes" : "no"}`,
@@ -95,11 +110,38 @@ export function buildFallbackAssistantReply({
     .find((m) => m.role === "user")
     ?.content.toLowerCase() ?? "";
 
+  const isClaimingUpload =
+    (lastUserMessage.includes("this is my") ||
+      lastUserMessage.includes("here is my") ||
+      lastUserMessage.includes("voici mon") ||
+      lastUserMessage.includes("voici ma") ||
+      lastUserMessage.includes("c'est mon") ||
+      lastUserMessage.includes("c'est ma") ||
+      lastUserMessage.includes("mon passeport") ||
+      lastUserMessage.includes("ma pièce d'identité") ||
+      lastUserMessage.includes("mon adresse") ||
+      lastUserMessage.includes("i uploaded") ||
+      lastUserMessage.includes("j'ai uploadé") ||
+      lastUserMessage.includes("j'ai envoyé")) &&
+    !lastUserMessage.includes("?") &&
+    !lastUserMessage.includes("should i") &&
+    !lastUserMessage.includes("do i need") &&
+    !lastUserMessage.includes("how do i") &&
+    !lastUserMessage.includes("what should");
+
   if (!uiState.identityUploaded) {
-    return "Welcome to the KYC Service Agent. Please upload your government-issued identity document (passport, national ID card, or residence permit) to begin verification.";
+    if (isClaimingUpload) {
+      return "No file upload was detected in the system. Please use the upload zone in the workspace panel to attach your identity document (passport, national ID card, or residence permit) as a PNG or JPG image.";
+    }
+
+    return "Welcome to the KYC Service Agent. Please upload your government-issued identity document (passport, national ID card, or residence permit) using the upload zone in the workspace panel to begin verification.";
   }
 
   if (!uiState.addressUploaded) {
+    if (isClaimingUpload) {
+      return "No proof of address file was detected in the system. Please use the upload zone in the workspace panel to attach your proof of address as a PNG or JPG image.";
+    }
+
     const isAskingAboutAddress =
       lastUserMessage.includes("what") ||
       lastUserMessage.includes("kind") ||
@@ -112,11 +154,11 @@ export function buildFallbackAssistantReply({
       return (
         "Accepted proof of address documents include: a recent utility bill (electricity, gas, or water), " +
         "a bank or credit card statement, a government-issued letter, or a tenancy agreement — " +
-        "all dated within the last 3 months. Please upload one of these as a PNG or JPG image."
+        "all dated within the last 3 months. Please upload one of these as a PNG or JPG image using the upload zone."
       );
     }
 
-    return "Identity document received. Please upload your proof of address to continue.";
+    return "Identity document received. Please upload your proof of address using the upload zone in the workspace panel to continue.";
   }
 
   if (!uiState.confirmReceived) {

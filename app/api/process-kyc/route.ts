@@ -19,6 +19,15 @@ const REQUIRED_FIELDS: (keyof ExtractedData)[] = [
   "address",
 ];
 
+class ValidationError extends Error {
+  readonly validationError = true as const;
+
+  constructor(message: string) {
+    super(message);
+    this.name = "ValidationError";
+  }
+}
+
 async function extractDocumentData(
   client: OpenAI,
   identityDataUrl: string,
@@ -35,20 +44,37 @@ async function extractDocumentData(
             {
               type: "text",
               text: [
-                "You are a KYC document reader. Extract data from the two images below.",
-                "The FIRST image is an identity document (passport, ID card, or residence permit).",
-                "The SECOND image is a proof of address (utility bill, bank statement, etc.).",
+                "You are a KYC document validator and data extractor.",
+                "You will receive two images.",
+                "The FIRST image must be an identity document (passport, national ID card, or residence permit).",
+                "The SECOND image must be a proof of address (utility bill, bank statement, government-issued letter, or tenancy agreement).",
                 "",
-                "Return ONLY a JSON object with exactly these fields (use an empty string when a field cannot be read):",
-                '  "documentType"  — type of identity document (e.g. "Passport", "National Identity Card", "Residence Permit")',
-                '  "firstName"     — first / given name from the identity document',
-                '  "lastName"      — last / family name from the identity document',
-                '  "documentNumber"— document or ID number from the identity document',
-                '  "expiryDate"    — expiry date in YYYY-MM-DD format',
-                '  "dateOfBirth"   — date of birth in YYYY-MM-DD format',
-                '  "nationality"   — nationality or country of issue',
-                '  "address"       — full residential address from the proof of address document',
+                "Always return a single JSON object with a top-level 'valid' boolean field.",
                 "",
+                "If either image is NOT a valid document (e.g. a random photo, a blank page,",
+                "or an image that cannot be recognised as the required document type), return:",
+                '{',
+                '  "valid": false,',
+                '  "reason": "<brief explanation of which document failed and why>",',
+                '  "documentType": "", "firstName": "", "lastName": "", "documentNumber": "",',
+                '  "expiryDate": "", "dateOfBirth": "", "nationality": "", "address": ""',
+                '}',
+                "",
+                "If both images are valid documents, extract data and return:",
+                '{',
+                '  "valid": true,',
+                '  "reason": "",',
+                '  "documentType": "<type: Passport / National Identity Card / Residence Permit>",',
+                '  "firstName": "<given name from identity document>",',
+                '  "lastName": "<family name from identity document>",',
+                '  "documentNumber": "<ID or document number>",',
+                '  "expiryDate": "<YYYY-MM-DD>",',
+                '  "dateOfBirth": "<YYYY-MM-DD>",',
+                '  "nationality": "<nationality or country of issue>",',
+                '  "address": "<full address from proof of address document>"',
+                '}',
+                "",
+                "Use an empty string for any field that cannot be clearly read.",
                 "Do not include any explanation, markdown, or extra keys. Return only the JSON object.",
               ].join("\n"),
             },
@@ -74,6 +100,16 @@ async function extractDocumentData(
 
     const parsed = JSON.parse(content) as Record<string, unknown>;
 
+    // Document validation failed — propagate the rejection reason
+    if (parsed.valid === false) {
+      const reason =
+        typeof parsed.reason === "string" && parsed.reason.trim()
+          ? parsed.reason
+          : "One or more uploaded images could not be recognised as valid KYC documents.";
+
+      throw new ValidationError(reason);
+    }
+
     // Validate all required fields are present
     for (const field of REQUIRED_FIELDS) {
       if (typeof parsed[field] !== "string") {
@@ -93,6 +129,11 @@ async function extractDocumentData(
       address: parsed.address as string,
     };
   } catch (err) {
+    // Re-throw validation errors so the route can return a proper 422
+    if (err instanceof ValidationError) {
+      throw err;
+    }
+
     console.error("[process-kyc] Vision extraction failed:", err);
     return null;
   }
@@ -112,26 +153,44 @@ export async function POST(request: NextRequest) {
     payload = {};
   }
 
+  // Reject the request immediately if either file is missing
+  if (!payload.identityFileData || !payload.addressFileData) {
+    return NextResponse.json(
+      { error: "Both documents must be uploaded before starting verification." },
+      { status: 400 },
+    );
+  }
+
   const client = getOpenAIClient();
 
-  if (client && payload.identityFileData && payload.addressFileData) {
-    const extracted = await extractDocumentData(
-      client,
-      payload.identityFileData,
-      payload.addressFileData,
-    );
+  if (client) {
+    try {
+      const extracted = await extractDocumentData(
+        client,
+        payload.identityFileData,
+        payload.addressFileData,
+      );
 
-    if (extracted) {
-      const mockResult = simulateKycProcess({
-        identityFileName: payload.identityFileName,
-        addressFileName: payload.addressFileName,
-      });
+      if (extracted) {
+        const mockResult = simulateKycProcess({
+          identityFileName: payload.identityFileName,
+          addressFileName: payload.addressFileName,
+        });
 
-      return NextResponse.json({ ...mockResult, extracted });
+        return NextResponse.json({ ...mockResult, extracted });
+      }
+    } catch (err) {
+      if (err instanceof ValidationError) {
+        const reason = (err as Error).message;
+        console.error("[process-kyc] Document validation rejected:", reason);
+        return NextResponse.json({ error: reason }, { status: 422 });
+      }
+
+      console.error("[process-kyc] Unexpected error during extraction:", err);
     }
   }
 
-  // Fallback: mock simulation (no API key, no file data, or Vision call failed)
+  // Fallback: mock simulation (no API key or Vision call failed without validation error)
   await new Promise((resolve) => setTimeout(resolve, 1400));
 
   return NextResponse.json(
